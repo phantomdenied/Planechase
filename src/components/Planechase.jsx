@@ -43,7 +43,7 @@ function dedupeByCanonId(cards) {
 
 const imgCache = {}
 
-function usePlaneImage(planeName, scryfallSet) {
+function usePlaneImage(planeName) {
   const [url, setUrl] = useState(imgCache[planeName] ?? null)
   const [loading, setLoading] = useState(!imgCache[planeName] && !!planeName)
 
@@ -54,21 +54,14 @@ function usePlaneImage(planeName, scryfallSet) {
     setUrl(null)
     let cancelled = false
     fetch('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(planeName))
-      .then(r => {
-        if (r.ok) return r.json()
-        throw new Error('not found')
-      })
+      .then(r => { if (r.ok) return r.json(); throw new Error('not found') })
       .then(card => {
         const img =
           card.image_uris?.large ??
           card.image_uris?.normal ??
           card.card_faces?.[0]?.image_uris?.large ??
-          card.card_faces?.[0]?.image_uris?.normal ??
-          null
-        if (!cancelled) {
-          if (img) imgCache[planeName] = img
-          setUrl(img)
-        }
+          card.card_faces?.[0]?.image_uris?.normal ?? null
+        if (!cancelled) { if (img) imgCache[planeName] = img; setUrl(img) }
       })
       .catch(() => { if (!cancelled) setUrl(null) })
       .finally(() => { if (!cancelled) setLoading(false) })
@@ -98,16 +91,12 @@ export default function Planechase() {
   const currentPlane = deck[deckIndex] ?? null
   const isCurrentPhenomenon = currentPlane?.type === 'phenomenon'
   const currentCounters = counters[currentPlane?.id] ?? 0
-  const { url: cardImg, loading: imgLoading } = usePlaneImage(currentPlane?.name, currentPlane?.scryfallSet)
+  const { url: cardImg, loading: imgLoading } = usePlaneImage(currentPlane?.name)
 
   function buildDeck(pool) {
     const d = shuffle(dedupeByCanonId(pool ?? ALL_CARDS))
-    setDeck(d)
-    setDeckIndex(0)
-    setHistory([])
-    setCounters({})
-    setDieResult(null)
-    setChaosTriggers(0)
+    setDeck(d); setDeckIndex(0); setHistory([]); setCounters({})
+    setDieResult(null); setChaosTriggers(0)
   }
 
   function rollDie() {
@@ -117,12 +106,10 @@ export default function Planechase() {
     setOverlayResult(null)
     setRollingFace('blank')
     setShowDieOverlay(true)
-
     let i = 0
     intervalRef.current = setInterval(() => {
       setRollingFace(ROLL_CYCLE[i++ % ROLL_CYCLE.length])
     }, 80)
-
     setTimeout(() => {
       clearInterval(intervalRef.current)
       const face = DIE_FACES[Math.floor(Math.random() * DIE_FACES.length)]
@@ -160,18 +147,12 @@ export default function Planechase() {
 
   function adjustCounter(delta) {
     if (!currentPlane) return
-    setCounters(c => ({
-      ...c,
-      [currentPlane.id]: Math.max(0, (c[currentPlane.id] ?? 0) + delta),
-    }))
+    setCounters(c => ({ ...c, [currentPlane.id]: Math.max(0, (c[currentPlane.id] ?? 0) + delta) }))
   }
 
   function applyConfig() {
     let pool = PLANES_ONLY.filter(p => filterSets.has(p.set))
-    if (includePhenomena) {
-      const phen = PHENOMENA.filter(p => filterSets.has(p.set))
-      pool = [...pool, ...phen]
-    }
+    if (includePhenomena) pool = [...pool, ...PHENOMENA.filter(p => filterSets.has(p.set))]
     buildDeck(pool.length > 0 ? pool : ALL_CARDS)
     setShowDeckConfig(false)
   }
@@ -179,61 +160,63 @@ export default function Planechase() {
   function toggleSet(key) {
     setFilterSets(prev => {
       const next = new Set(prev)
-      if (next.has(key)) {
-        if (next.size > 1) next.delete(key)
-      } else {
-        next.add(key)
-      }
+      if (next.has(key)) { if (next.size > 1) next.delete(key) } else { next.add(key) }
       return next
     })
   }
 
   const SET_KEYS = Object.keys(SET_LABELS).filter(k =>
-    PLANES_ONLY.some(card => card.set === k) || PHENOMENA.some(card => card.set === k)
+    PLANES_ONLY.some(c => c.set === k) || PHENOMENA.some(c => c.set === k)
   )
   const setCounts = SET_KEYS.reduce((acc, key) => {
-    const planeCount = PLANES_ONLY.filter(card => card.set === key).length
-    const phenCount = includePhenomena ? PHENOMENA.filter(card => card.set === key).length : 0
-    acc[key] = planeCount + phenCount
+    acc[key] = PLANES_ONLY.filter(c => c.set === key).length +
+      (includePhenomena ? PHENOMENA.filter(c => c.set === key).length : 0)
     return acc
   }, {})
   const needsCounter = ['aretopolis', 'kilnspire', 'naar-isle', 'mechanus'].includes(currentPlane?.id)
 
   return (
     <div className="planechase">
+
       {currentPlane && (
         <div className={'plane-card' + (isCurrentPhenomenon ? ' phenomenon' : '')}>
           <div className="plane-img-wrap">
             {imgLoading && <div className="plane-img-skeleton" />}
-            {cardImg && (
-              <img
-                className="plane-img"
-                src={cardImg}
-                alt={currentPlane.name}
-                loading="lazy"
-              />
-            )}
+            {cardImg && <img className="plane-img" src={cardImg} alt={currentPlane.name} loading="lazy" />}
             {!imgLoading && !cardImg && (
               <div className="plane-img-fallback">
                 <span className="plane-img-fallback-name">{currentPlane.name}</span>
               </div>
             )}
-
             <div className="plane-img-overlay">
-              {chaosTriggers > 0 && (
-                <div className="chaos-overlay">
-                  {'Chaos' + (chaosTriggers > 1 ? ' x' + chaosTriggers : '') + '!'}
-                </div>
-              )}
-              <button className="show-text-btn" onClick={() => setShowText(v => !v)}>
-                {showText ? 'Hide text' : 'Show text'}
-              </button>
+              <div className="plane-overlay-top">
+                {chaosTriggers > 0 && (
+                  <div className="chaos-overlay">
+                    {'Chaos' + (chaosTriggers > 1 ? ' ×' + chaosTriggers : '') + '!'}
+                  </div>
+                )}
+              </div>
+              <div className="plane-overlay-bottom">
+                <button
+                  className={'info-btn' + (showText ? ' active' : '')}
+                  onClick={() => setShowText(v => !v)}
+                  aria-label="Toggle card text"
+                >
+                  i
+                </button>
+              </div>
             </div>
+          </div>
+
+          <div className="plane-name-strip">
+            <span className={'plane-type-tag' + (isCurrentPhenomenon ? ' phen' : '')}>
+              {isCurrentPhenomenon ? 'Phenomenon' : 'Plane'}
+            </span>
+            <span className="plane-name-text">{currentPlane.name}</span>
           </div>
 
           {showText && (
             <div className="plane-text-block">
-              <p className="plane-name">{currentPlane.name}</p>
               <div className="plane-text static-text">{currentPlane.static}</div>
               {currentPlane.chaos && (
                 <div className="plane-text chaos-text">
@@ -241,7 +224,7 @@ export default function Planechase() {
                 </div>
               )}
               {isCurrentPhenomenon && (
-                <div className="phen-note">Encounter -- resolve effect immediately.</div>
+                <div className="phen-note">Encounter — resolve effect immediately.</div>
               )}
             </div>
           )}
@@ -249,7 +232,7 @@ export default function Planechase() {
           {needsCounter && (
             <div className="plane-counters">
               <span className="counter-key-label">Counters</span>
-              <button className="counter-adj" onClick={() => adjustCounter(-1)} disabled={currentCounters <= 0}>-</button>
+              <button className="counter-adj" onClick={() => adjustCounter(-1)} disabled={currentCounters <= 0}>−</button>
               <span className="counter-val">{currentCounters}</span>
               <button className="counter-adj" onClick={() => adjustCounter(1)}>+</button>
             </div>
@@ -257,32 +240,29 @@ export default function Planechase() {
         </div>
       )}
 
-      {dieResult && (
-        <div className={'die-result die-' + dieResult}>
-          {dieResult === 'planeswalk' && 'Planeswalk!'}
-          {dieResult === 'chaos'      && 'Chaos!'}
-          {dieResult === 'blank'      && 'No effect'}
-        </div>
-      )}
+      <button
+        className={'plane-btn die-btn-primary' + (rolling ? ' rolling' : '')}
+        onClick={rollDie}
+        disabled={rolling}
+      >
+        {rolling ? 'Rolling…' : 'Roll Planar Die'}
+      </button>
 
       <div className="plane-controls">
-        <button className="plane-btn secondary" onClick={planewalkBack} disabled={history.length === 0}>Back</button>
-        <button
-          className={'plane-btn die-btn-big' + (rolling ? ' rolling' : '')}
-          onClick={rollDie}
-          disabled={rolling}
-        >
-          {rolling ? '...' : 'Roll Planar Die'}
+        <button className="plane-btn ghost" onClick={planewalkBack} disabled={history.length === 0}>
+          ← Back
         </button>
-        <button className="plane-btn primary" onClick={() => planeswalk()}>Planeswalk</button>
+        <button className="plane-btn primary" onClick={() => planeswalk()}>
+          Planeswalk →
+        </button>
       </div>
 
-      <div className="plane-controls secondary-row">
-        <button className="plane-btn small" onClick={() => setShowDeckConfig(v => !v)}>
+      <div className="plane-meta">
+        <button className="meta-btn" onClick={() => setShowDeckConfig(v => !v)}>
           Deck ({deck.length})
         </button>
         <span className="plane-progress">Plane {deckIndex + 1} / {deck.length}</span>
-        <button className="plane-btn small danger" onClick={() => buildDeck()}>Reshuffle</button>
+        <button className="meta-btn danger" onClick={() => buildDeck()}>Reshuffle</button>
       </div>
 
       {showDeckConfig && (
