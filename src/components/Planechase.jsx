@@ -1,9 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
 import './Planechase.css'
 
 const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
 const DIE_FACES = ['blank', 'blank', 'blank', 'planeswalk', 'chaos', 'blank']
+const ROLL_CYCLE = ['blank', 'chaos', 'blank', 'planeswalk', 'chaos', 'blank', 'planeswalk', 'blank']
+
+function PlaneswalkIcon() {
+  return (
+    <svg viewBox="0 0 100 100" className="die-icon" aria-hidden="true">
+      <polygon points="50,8 60,35 90,37 67,56 75,84 50,68 25,84 33,56 10,37 40,35" />
+    </svg>
+  )
+}
+
+function ChaosIcon() {
+  return (
+    <svg viewBox="0 0 100 100" className="die-icon" aria-hidden="true">
+      <polygon points="50,7 60.5,31.8 87.2,28.5 71,50 87.2,71.5 60.5,68.2 50,93 39.5,68.2 12.8,71.5 29,50 12.8,28.5 39.5,31.8" />
+    </svg>
+  )
+}
 
 function shuffle(arr) {
   const a = [...arr]
@@ -73,6 +90,10 @@ export default function Planechase() {
   const [showDeckConfig, setShowDeckConfig] = useState(false)
   const [includePhenomena, setIncludePhenomena] = useState(true)
   const [showText, setShowText] = useState(false)
+  const [showDieOverlay, setShowDieOverlay] = useState(false)
+  const [rollingFace, setRollingFace] = useState('blank')
+  const [overlayResult, setOverlayResult] = useState(null)
+  const intervalRef = useRef(null)
 
   const currentPlane = deck[deckIndex] ?? null
   const isCurrentPhenomenon = currentPlane?.type === 'phenomenon'
@@ -90,15 +111,34 @@ export default function Planechase() {
   }
 
   function rollDie() {
+    if (rolling) return
     setRolling(true)
     setDieResult(null)
+    setOverlayResult(null)
+    setRollingFace('blank')
+    setShowDieOverlay(true)
+
+    let i = 0
+    intervalRef.current = setInterval(() => {
+      setRollingFace(ROLL_CYCLE[i++ % ROLL_CYCLE.length])
+    }, 80)
+
     setTimeout(() => {
+      clearInterval(intervalRef.current)
       const face = DIE_FACES[Math.floor(Math.random() * DIE_FACES.length)]
+      setRollingFace(face)
+      setOverlayResult(face)
       setDieResult(face)
       if (face === 'planeswalk') planeswalk()
       else if (face === 'chaos') setChaosTriggers(n => n + 1)
       setRolling(false)
-    }, 350)
+    }, 800)
+  }
+
+  function dismissDieOverlay() {
+    if (rolling) return
+    setShowDieOverlay(false)
+    setOverlayResult(null)
   }
 
   function planeswalk(targetIndex = null) {
@@ -277,6 +317,25 @@ export default function Planechase() {
               <span key={i} className={'history-chip' + (p.type === 'phenomenon' ? ' phen' : '')}>{p.name}</span>
             ))}
           </div>
+        </div>
+      )}
+
+      {showDieOverlay && (
+        <div className="die-overlay" onClick={dismissDieOverlay}>
+          <div className={`die-face-big face-${rollingFace}${rolling ? ' die-spinning' : ' die-settled'}`}>
+            {rollingFace === 'planeswalk' && <PlaneswalkIcon />}
+            {rollingFace === 'chaos' && <ChaosIcon />}
+          </div>
+          {!rolling && overlayResult && (
+            <>
+              <div className={`die-overlay-label die-overlay-${overlayResult}`}>
+                {overlayResult === 'planeswalk' && 'Planeswalk!'}
+                {overlayResult === 'chaos' && 'Chaos!'}
+                {overlayResult === 'blank' && 'No effect'}
+              </div>
+              <div className="die-overlay-tap">Tap to dismiss</div>
+            </>
+          )}
         </div>
       )}
     </div>
