@@ -114,8 +114,8 @@ export const PLANES = [
     chaos:  'Target creature gains all creature types until end of turn.' },
 
   // Planechase 2012 (PC2) -------------------------------------------------
-  { id: 'aretopolis', canonId: 'aretopolis',            name: 'Aretopolis',              set: 'PC2', type: 'plane', world: 'Ravnica',
-    static: 'When you planeswalk to Aretopolis, put a scroll counter on it. At the beginning of your upkeep, put a scroll counter on it, then you gain life equal to the number of scroll counters on it.',
+  { id: 'aretopolis', canonId: 'aretopolis',            name: 'Aretopolis',              set: 'PC2', type: 'plane', world: 'Kephalai',
+    static: 'When you planeswalk to Aretopolis or at the beginning of your upkeep, put a scroll counter on Aretopolis, then you gain life equal to the number of scroll counters on it.',
     chaos:  'Put half that many scroll counters, rounded up, on Aretopolis.' },
   { id: 'astral-arena', canonId: 'astral-arena',          name: 'Astral Arena',            set: 'PC2', type: 'plane', world: 'Blind Eternities',
     static: 'No more than one creature can attack each combat. No more than one creature can block each combat.',
