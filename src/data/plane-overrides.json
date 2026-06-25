@@ -4,5 +4,11 @@
     "world": "MagicCon",
     "static": "Whenever you attack, create a Pin token attached to target attacking creature you control. It's an Pin Aura enchantment with enchant creature and \"Enchanted creature gets +1/+1.\"",
     "chaos": "Each opponent loses X life, where X is the total number of pins attached to you and creatures you control. (This includes pins on your backpack.)"
+  },
+  "clamilton-estate": {
+    "type": "plane",
+    "world": "Clamhattan",
+    "static": "If a wordy permanent entering the battlefield would cause an ability of that permanent or another wordy permanent to trigger, that ability triggers an additional time. (A permanent is wordy if it has four or more lines of rules text.)",
+    "chaos": "Exile cards from the top of your library until you exile a wordy nonland card, Put that card into your hand. Put each card not cast this way on the bottom of your library in a random order."
   }
 }
