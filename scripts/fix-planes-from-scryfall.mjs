@@ -65,17 +65,33 @@ async function fetchMtgjsonSet(setCode) {
 // Oracle-text parsing
 // ---------------------------------------------------------------------------
 
-/** Split "static\nWhenever chaos ensues, chaos" → { static, chaos } */
+/** Split "static\nWhenever chaos ensues, chaos" → { static, chaos }
+ *  Handles:
+ *   - "Whenever chaos ensues, effect"       (standard)
+ *   - "When chaos ensues, effect"           (WHO variant)
+ *   - "Name — Whenever chaos ensues, eff."  (WHO named ability)
+ */
 function parseOracleText(text) {
   if (!text) return { static: null, chaos: null };
-  const sep = '\nWhenever chaos ensues, ';
-  const idx = text.indexOf(sep);
-  if (idx !== -1) {
-    return {
-      static: text.slice(0, idx).trim(),
-      chaos:  text.slice(idx + sep.length).trim(),
-    };
+
+  // Optional "Name — " prefix before the chaos trigger keyword
+  const chaosRe = /\n((?:[^\n]+?[—–]\s+)?(?:Whenever |When )chaos ensues,\s*)/;
+  const m = text.match(chaosRe);
+
+  if (m) {
+    const staticPart  = text.slice(0, m.index).trim();
+    const fullSep     = m[1];
+    const chaosEffect = text.slice(m.index + m[0].length).trim();
+
+    // If a named ability prefix was present, include it in the chaos output
+    const namedMatch = fullSep.match(/^(.*?[—–]\s+)(?:Whenever |When )chaos ensues,\s*$/);
+    if (namedMatch) {
+      return { static: staticPart, chaos: namedMatch[1] + chaosEffect };
+    }
+
+    return { static: staticPart, chaos: chaosEffect };
   }
+
   return { static: text.trim(), chaos: null };
 }
 
