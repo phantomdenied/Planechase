@@ -16,5 +16,23 @@
     "world": "Foldaria",
     "static": "When you planeswalk here and at the beginning of your upkeep, fold this plane in half. Draw cards equal to the number of times it's been folded. If you can't fold it, planeswalk.",
     "chaos": "Completely unfold this plane. Each opponent discards two cards."
+  },
+  "black-lotus-lounge": {
+    "type": "plane",
+    "world": "MagicCon",
+    "static": "When you planeswalk here and at the beginning of your upkeep, create a Black Lotus artifact token.",
+    "chaos": "Each player draws a card for each artifact token they control."
+  },
+  "windy-city": {
+    "type": "plane",
+    "world": "Chicago",
+    "static": "When you planeswalk here and at the beginning of your upkeep, put a flying counter on target nontoken creature you control without flying.\nWhen you planeswalk away from The Windy City, remove all flying counters from all creatures.",
+    "chaos": "exile target creature with flying. For as long as it remains exiled, its owner may cast it by paying {2} rather than paying its mana cost."
+  },
+  "bicycle-rack": {
+    "type": "plane",
+    "world": "Amsterdam",
+    "static": "Cards in each player's hand have cycling {2}.",
+    "chaos": "Until end of turn, creatures you control have \"This creature gets +1/+1 for each card you've discarded this turn.\""
   }
 }
