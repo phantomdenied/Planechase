@@ -128,9 +128,10 @@ function applyCorrections(fileText, entryRanges, corrections) {
     let block = result.slice(start, end);
 
     if (corr.world !== undefined) {
+      // world: sits mid-line (same line as id/name/set), so can't use a line-start lookbehind
       block = block.replace(
-        /(?<=(^|\n)[\t ]*world:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
-        jsString(corr.world),
+        /(\bworld:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
+        (_, key) => key + jsString(corr.world),
       );
     }
     if (corr.static !== undefined) {
