@@ -70,12 +70,13 @@ async function fetchMtgjsonSet(setCode) {
  *   - "Whenever chaos ensues, effect"       (standard)
  *   - "When chaos ensues, effect"           (WHO variant)
  *   - "Name — Whenever chaos ensues, eff."  (WHO named ability)
+ *   - "Chaos: effect"                       (PUNK short format)
  */
 function parseOracleText(text) {
   if (!text) return { static: null, chaos: null };
 
-  // Optional "Name — " prefix before the chaos trigger keyword
-  const chaosRe = /\n((?:[^\n]+?[—–]\s+)?(?:Whenever |When )chaos ensues,\s*)/;
+  // Optional "Name — " prefix before the chaos trigger keyword, or bare "Chaos:" label
+  const chaosRe = /\n((?:[^\n]+?[—–]\s+)?(?:Whenever |When )chaos ensues,\s*|Chaos:\s*)/;
   const m = text.match(chaosRe);
 
   if (m) {
