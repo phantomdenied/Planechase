@@ -24,10 +24,9 @@ const SCRYFALL_SETS = [
   'ohop',   // Planechase 2009 Planes
   'opc2',   // Planechase 2012 Planes
   'opca',   // Planechase Anthology Planes
-  'omoc',   // March of the Machine Commander Planes
 ];
-// WHO (Doctor Who) planechase planes live in layout:planar cards within the
-// WHO set itself.  We query that separately below.
+// MOC and WHO planechase planes live in layout:planar cards within the
+// regular commander set itself.  We query those separately below.
 
 // ---------------------------------------------------------------------------
 // HTTP helper
@@ -228,6 +227,18 @@ async function main() {
     } catch (e) {
       console.error(`  WARN: ${setCode} failed: ${e.message}`);
     }
+  }
+
+  // MOC planes: layout:planar in the 'moc' (March of the Machine Commander) set
+  try {
+    const mocUrl = `https://api.scryfall.com/cards/search?q=set%3Amoc+layout%3Aplanar&order=name`;
+    const mocData = await httpsGet(mocUrl);
+    for (const c of mocData.data) {
+      if (!sfByName.has(c.name)) sfByName.set(c.name, c);
+    }
+    console.log(`  MOC: ${mocData.data.length} cards`);
+  } catch (e) {
+    console.error(`  WARN: MOC fetch failed: ${e.message}`);
   }
 
   // WHO planes: layout:planar in the 'who' set

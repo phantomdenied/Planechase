@@ -27,11 +27,10 @@ const SCRYFALL_SETS = [
   'ohop',  // Planechase 2009 Planes
   'opc2',  // Planechase 2012 Planes
   'opca',  // Planechase Anthology Planes
-  'omoc',  // March of the Machine Commander Planes
+  'moc',   // March of the Machine Commander Planes (layout:planar within the set)
+  'who',   // Doctor Who Planes (layout:planar within the set)
 ];
-// NOTE: WHO (Doctor Who) planechase planes live in the regular WHO set under
-// layout:planar.  Add 'who' here if you want to check those too — the IDs on
-// Scryfall are the same oversized-card style but may sit in the main WHO set.
+// NOTE: PUNK (MagicCon promo) planes are not on Scryfall and cannot be verified here.
 
 // ---------------------------------------------------------------------------
 // Helpers
