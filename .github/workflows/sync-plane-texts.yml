@@ -1,0 +1,49 @@
+name: Sync Plane Oracle Texts from Scryfall
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (report mismatches without committing)'
+        required: false
+        default: 'false'
+        type: choice
+        options: ['false', 'true']
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: claude/planechase-app-migration-7ejfvc
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Scryfall fix script
+        run: node scripts/fix-planes-from-scryfall.mjs
+        env:
+          NODE_OPTIONS: '--no-warnings'
+
+      - name: Show diff
+        run: git diff src/data/planes.js || true
+
+      - name: Commit and push corrections
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet src/data/planes.js; then
+            echo "No changes to commit."
+          else
+            git add src/data/planes.js
+            git commit -m "Auto-fix plane oracle texts via Scryfall API"
+            git push origin claude/planechase-app-migration-7ejfvc
+          fi
