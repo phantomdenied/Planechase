@@ -76,7 +76,8 @@ function parseOracleText(text) {
   if (!text) return { static: null, chaos: null };
 
   // Optional "Name — " prefix before the chaos trigger keyword, or bare "Chaos:" label
-  const chaosRe = /\n((?:[^\n]+?[—–]\s+)?(?:Whenever |When )chaos ensues,\s*|Chaos:\s*)/;
+  // Case-insensitive: MTGJSON uses "Chaos ensues" (capital C) in some PUNK cards
+  const chaosRe = /\n((?:[^\n]+?[—–]\s+)?(?:Whenever |When )chaos ensues,\s*|Chaos:\s*)/i;
   const m = text.match(chaosRe);
 
   if (m) {

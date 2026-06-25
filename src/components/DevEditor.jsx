@@ -100,7 +100,7 @@ export function DevCardEditor({ plane, override, allOverrides, onSave, onClear, 
   const [staticText, setStaticText] = useState(merged.static ?? '')
   const [chaosText, setChaosText] = useState(merged.chaos ?? '')
 
-  const [ghToken, setGhToken] = useState(() => sessionStorage.getItem(GH_TOKEN_KEY) ?? '')
+  const [ghToken, setGhToken] = useState(() => localStorage.getItem(GH_TOKEN_KEY) ?? '')
   const [pushStatus, setPushStatus] = useState(null) // null | 'pushing' | 'success' | Error
 
   const isPhen = type === 'phenomenon'
@@ -129,7 +129,7 @@ export function DevCardEditor({ plane, override, allOverrides, onSave, onClear, 
   async function pushToGitHub() {
     const token = ghToken.trim()
     if (!token) return
-    sessionStorage.setItem(GH_TOKEN_KEY, token)
+    localStorage.setItem(GH_TOKEN_KEY, token)
     // Save current edit to local state too so it's included in combined
     onSave(plane.id, currentEdit())
     setPushStatus('pushing')
