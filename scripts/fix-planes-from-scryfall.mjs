@@ -129,19 +129,19 @@ function applyCorrections(fileText, entryRanges, corrections) {
 
     if (corr.world !== undefined) {
       block = block.replace(
-        /(?<=(^|\n)[\t ]*world:\s{0,10})(['"])(?:(?!\2).|\\[\s\S])*?\2/g,
+        /(?<=(^|\n)[\t ]*world:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
         jsString(corr.world),
       );
     }
     if (corr.static !== undefined) {
       block = block.replace(
-        /(?<=(^|\n)[\t ]*static:\s{0,10})(['"])(?:(?!\2).|\\[\s\S])*?\2/g,
+        /(?<=(^|\n)[\t ]*static:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
         jsString(corr.static),
       );
     }
     if (corr.chaos !== undefined) {
       block = block.replace(
-        /(?<=(^|\n)[\t ]*chaos:\s{0,10})(['"])(?:(?!\2).|\\[\s\S])*?\2/g,
+        /(?<=(^|\n)[\t ]*chaos:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
         jsString(corr.chaos),
       );
     }
