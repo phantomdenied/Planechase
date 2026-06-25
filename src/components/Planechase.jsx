@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
 import { DevPasswordModal, DevCardEditor, loadDevOverrides, STORAGE_KEY } from './DevEditor'
 import repoOverrides from '../data/plane-overrides.json'
-import chaosIcon from '../assets/chaos-icon.png'
-import planewalkIcon from '../assets/planeswalk-icon.png'
+import chaosIcon from '../assets/chaos-icon-white.png'
+import planewalkIcon from '../assets/planeswalk-icon-white.png'
 import './Planechase.css'
 
 const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
