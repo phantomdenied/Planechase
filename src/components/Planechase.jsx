@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
 import { DevPasswordModal, DevCardEditor, loadDevOverrides, STORAGE_KEY } from './DevEditor'
 import repoOverrides from '../data/plane-overrides.json'
+import chaosIcon from '../assets/chaos-icon.png'
+import planewalkIcon from '../assets/planeswalk-icon.png'
 import './Planechase.css'
 
 const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
@@ -257,9 +259,13 @@ export default function Planechase() {
 
       {dieResult && (
         <div className={'die-result die-' + dieResult}>
-          {dieResult === 'planeswalk' && 'Planeswalk!'}
-          {dieResult === 'chaos'      && 'Chaos!'}
-          {dieResult === 'blank'      && 'No effect'}
+          {dieResult === 'planeswalk' && (
+            <><img className="die-icon" src={planewalkIcon} alt="" /><span>Planeswalk!</span></>
+          )}
+          {dieResult === 'chaos' && (
+            <><img className="die-icon" src={chaosIcon} alt="" /><span>Chaos!</span></>
+          )}
+          {dieResult === 'blank' && <span>No effect</span>}
         </div>
       )}
 
