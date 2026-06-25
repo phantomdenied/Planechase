@@ -237,12 +237,17 @@ async function main() {
     process.exit(1);
   }
 
+  // Accent-normalized fallback index (handles e.g. "Oteclan" matching "Oteclán")
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const byNormName = new Map();
+  for (const [name, card] of byName) byNormName.set(norm(name), card);
+
   // --- Build correction map ---
   const corrections = new Map();
   const mismatches  = [];
 
   for (const plane of planeEntries) {
-    const card = byName.get(plane.name);
+    const card = byName.get(plane.name) ?? byNormName.get(norm(plane.name));
     if (!card) continue;
 
     // MTGJSON uses `text` for oracle text and `type` for type line

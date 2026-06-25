@@ -522,7 +522,7 @@ export const PLANES = [
   { id: 'multiversal-high-council', canonId: 'multiversal-high-council', name: 'Multiversal High Council', set: 'PUNK', type: 'plane', world: 'Universia Beyondia',
     static: 'Universes Beyond spells you cast cost {1} less to cast.\nEach creature gets +1/+1 for each different Universe among permanents its controller controls. (Magic: The Gathering and D&D each count as a universe.)',
     chaos:  "for each universe, return up to one target card from that Universe from your graveyard to your hand." },
-  { id: 'oteclan', canonId: 'oteclan',               name: 'Oteclan',                 set: 'PUNK', type: 'plane', world: 'MagicCon',
+  { id: 'oteclan', canonId: 'oteclan',               name: 'Oteclán',                 set: 'PUNK', type: 'plane', world: 'MagicCon',
     static: 'Whenever a player casts a spell, that player creates a Map token.',
     chaos:  'Draw two cards, then discard two cards. Untap up to three lands.' },
   { id: 'pin-collectors-booth', canonId: 'pin-collectors-booth',  name: "Pin Collector's Booth",   set: 'PUNK', type: 'plane', world: 'MagicCon',
