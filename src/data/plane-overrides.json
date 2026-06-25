@@ -10,5 +10,11 @@
     "world": "Clamhattan",
     "static": "If a wordy permanent entering the battlefield would cause an ability of that permanent or another wordy permanent to trigger, that ability triggers an additional time. (A permanent is wordy if it has four or more lines of rules text.)",
     "chaos": "Exile cards from the top of your library until you exile a wordy nonland card, Put that card into your hand. Put each card not cast this way on the bottom of your library in a random order."
+  },
+  "shrinking-plane": {
+    "type": "plane",
+    "world": "Foldaria",
+    "static": "When you planeswalk here and at the beginning of your upkeep, fold this plane in half. Draw cards equal to the number of times it's been folded. If you can't fold it, planeswalk.",
+    "chaos": "Completely unfold this plane. Each opponent discards two cards."
   }
 }
