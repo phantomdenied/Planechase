@@ -1,0 +1,217 @@
+.dev-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.dev-dialog,
+.dev-editor {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dev-editor {
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.dev-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.dev-card-name {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin: -0.5rem 0 0;
+  font-style: italic;
+}
+
+.dev-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dev-input,
+.dev-select,
+.dev-textarea {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dev-textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.dev-input:focus,
+.dev-select:focus,
+.dev-textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.dev-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin: -0.5rem 0 0;
+}
+
+.dev-push-ok {
+  color: var(--success);
+  font-size: 0.8rem;
+  margin: -0.5rem 0 0;
+}
+
+.dev-btn-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.dev-btn-right {
+  display: flex;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.dev-btn {
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.dev-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.dev-btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+.dev-btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
+
+.dev-btn.secondary {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.dev-btn.secondary:hover:not(:disabled) { border-color: var(--accent); }
+
+.dev-btn.danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid rgba(224, 82, 82, 0.4);
+}
+.dev-btn.danger:hover:not(:disabled) { background: rgba(224, 82, 82, 0.12); }
+
+/* Commit section */
+.dev-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+.dev-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0;
+}
+
+.dev-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(124, 106, 247, 0.2);
+  color: var(--accent-hover);
+  border: 1px solid rgba(124, 106, 247, 0.35);
+  border-radius: 10px;
+  padding: 0.1rem 0.5rem;
+}
+
+.dev-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: -0.25rem 0 0;
+}
+
+.dev-hint code {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 0.3rem;
+  font-size: 0.75rem;
+}
+
+/* Floating dev button */
+.dev-mode-fab {
+  position: fixed;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  padding: 0.3rem 0.55rem;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.3;
+  transition: opacity 0.2s, border-color 0.2s, color 0.2s;
+  font-family: inherit;
+  z-index: 100;
+}
+
+.dev-mode-fab:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.dev-mode-fab.unlocked {
+  opacity: 0.7;
+  border-color: var(--accent);
+  color: var(--accent);
+}

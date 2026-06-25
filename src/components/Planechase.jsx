@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
+import { DevPasswordModal, DevCardEditor, loadDevOverrides, STORAGE_KEY } from './DevEditor'
+import repoOverrides from '../data/plane-overrides.json'
 import './Planechase.css'
 
 const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
@@ -73,9 +75,16 @@ export default function Planechase() {
   const [showDeckConfig, setShowDeckConfig] = useState(false)
   const [includePhenomena, setIncludePhenomena] = useState(true)
   const [showText, setShowText] = useState(false)
+  const [devAuth, setDevAuth] = useState(false)
+  const [devOverrides, setDevOverrides] = useState(() => loadDevOverrides())
+  const [showDevUnlock, setShowDevUnlock] = useState(false)
+  const [showDevEditor, setShowDevEditor] = useState(false)
 
   const currentPlane = deck[deckIndex] ?? null
-  const isCurrentPhenomenon = currentPlane?.type === 'phenomenon'
+  const displayPlane = currentPlane
+    ? { ...currentPlane, ...(repoOverrides[currentPlane.id] ?? {}), ...(devOverrides[currentPlane.id] ?? {}) }
+    : null
+  const isCurrentPhenomenon = displayPlane?.type === 'phenomenon'
   const currentCounters = counters[currentPlane?.id] ?? 0
   const { url: cardImg, loading: imgLoading } = usePlaneImage(currentPlane?.name, currentPlane?.scryfallSet)
 
@@ -136,6 +145,35 @@ export default function Planechase() {
     setShowDeckConfig(false)
   }
 
+  function handleDevFab() {
+    if (!currentPlane) return
+    if (!devAuth) setShowDevUnlock(true)
+    else setShowDevEditor(true)
+  }
+
+  function handleDevAuth() {
+    setDevAuth(true)
+    setShowDevUnlock(false)
+    if (currentPlane) setShowDevEditor(true)
+  }
+
+  function saveDevOverride(id, edit) {
+    setDevOverrides(prev => {
+      const next = { ...prev, [id]: edit }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  function clearDevOverride(id) {
+    setDevOverrides(prev => {
+      const next = { ...prev }
+      delete next[id]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
   function toggleSet(key) {
     setFilterSets(prev => {
       const next = new Set(prev)
@@ -175,7 +213,7 @@ export default function Planechase() {
             )}
             {!imgLoading && !cardImg && (
               <div className="plane-img-fallback">
-                <span className="plane-img-fallback-name">{currentPlane.name}</span>
+                <span className="plane-img-fallback-name">{displayPlane.name}</span>
               </div>
             )}
 
@@ -193,11 +231,11 @@ export default function Planechase() {
 
           {showText && (
             <div className="plane-text-block">
-              <p className="plane-name">{currentPlane.name}</p>
-              <div className="plane-text static-text">{currentPlane.static}</div>
-              {currentPlane.chaos && (
+              <p className="plane-name">{displayPlane.name}</p>
+              <div className="plane-text static-text">{displayPlane.static}</div>
+              {displayPlane.chaos && (
                 <div className="plane-text chaos-text">
-                  <span className="chaos-icon">Chaos:</span> {currentPlane.chaos}
+                  <span className="chaos-icon">Chaos:</span> {displayPlane.chaos}
                 </div>
               )}
               {isCurrentPhenomenon && (
@@ -278,6 +316,32 @@ export default function Planechase() {
             ))}
           </div>
         </div>
+      )}
+
+      <button
+        className={'dev-mode-fab' + (devAuth ? ' unlocked' : '')}
+        onClick={handleDevFab}
+        title="Developer mode"
+      >
+        DEV
+      </button>
+
+      {showDevUnlock && (
+        <DevPasswordModal
+          onAuth={handleDevAuth}
+          onClose={() => setShowDevUnlock(false)}
+        />
+      )}
+
+      {showDevEditor && currentPlane && (
+        <DevCardEditor
+          plane={currentPlane}
+          override={devOverrides[currentPlane.id]}
+          allOverrides={devOverrides}
+          onSave={saveDevOverride}
+          onClear={clearDevOverride}
+          onClose={() => setShowDevEditor(false)}
+        />
       )}
     </div>
   )
