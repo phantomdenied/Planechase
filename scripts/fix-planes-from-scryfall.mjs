@@ -91,10 +91,14 @@ function parseWorld(typeLine) {
 
 function jsString(value) {
   if (value === null) return 'null';
-  if (value.includes("'") && !value.includes('"')) {
-    return `"${value}"`;
+  const safe = value
+    .replace(/\\/g, '\\\\')
+    .replace(/\r/g, '')
+    .replace(/\n/g, '\\n');
+  if (safe.includes("'") && !safe.includes('"')) {
+    return `"${safe}"`;
   }
-  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `'${safe.replace(/'/g, "\\'")}'`;
 }
 
 function applyCorrections(fileText, entryRanges, corrections) {
