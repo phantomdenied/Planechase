@@ -40,21 +40,26 @@ function usePlaneImage(planeName, scryfallSet) {
     setLoading(true)
     setUrl(null)
     let cancelled = false
-    const q = encodeURIComponent(`!"${planeName}" type:plane`)
-    fetch(`https://api.scryfall.com/cards/search?q=${q}&unique=prints&order=released`)
-      .then(r => {
-        if (r.ok) return r.json()
-        throw new Error('not found')
-      })
-      .then(resp => {
-        const card = resp.data?.[0]
-        if (!card) throw new Error('not found')
-        const img =
-          card.image_uris?.large ??
-          card.image_uris?.normal ??
-          card.card_faces?.[0]?.image_uris?.large ??
-          card.card_faces?.[0]?.image_uris?.normal ??
-          null
+    const extractImg = card =>
+      card.image_uris?.large ??
+      card.image_uris?.normal ??
+      card.card_faces?.[0]?.image_uris?.large ??
+      card.card_faces?.[0]?.image_uris?.normal ??
+      null
+
+    const searchFallback = () => {
+      const q = encodeURIComponent(`!"${planeName}" (t:plane or t:phenomenon)`)
+      return fetch(`https://api.scryfall.com/cards/search?q=${q}&unique=prints&order=released`)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('not found')))
+        .then(resp => { const c = resp.data?.[0]; if (!c) throw new Error('not found'); return c })
+    }
+
+    fetch('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(planeName))
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('not found')))
+      .then(card => /\b(plane|phenomenon)\b/i.test(card.type_line ?? '') ? card : searchFallback())
+      .catch(searchFallback)
+      .then(card => {
+        const img = extractImg(card)
         if (!cancelled) {
           if (img) imgCache[planeName] = img
           setUrl(img)
