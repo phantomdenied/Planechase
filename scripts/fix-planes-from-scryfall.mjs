@@ -255,6 +255,11 @@ async function main() {
 
   console.log(`  Total unique names: ${sfByName.size}\n`);
 
+  if (sfByName.size === 0) {
+    console.error('ERROR: No cards fetched from Scryfall — all requests failed. Check connectivity.');
+    process.exit(1);
+  }
+
   // --- Build correction map ---
   const corrections  = new Map(); // planeId → {world?, static?, chaos?}
   const mismatches   = [];

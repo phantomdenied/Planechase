@@ -27,10 +27,17 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Test Scryfall connectivity
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.scryfall.com/cards/named?exact=Island")
+          echo "Scryfall HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "ERROR: Cannot reach Scryfall API (status $STATUS)"
+            exit 1
+          fi
+
       - name: Run Scryfall fix script
         run: node scripts/fix-planes-from-scryfall.mjs
-        env:
-          NODE_OPTIONS: '--no-warnings'
 
       - name: Show diff
         run: git diff src/data/planes.js || true
