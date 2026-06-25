@@ -2,12 +2,12 @@
 /**
  * fix-planes-from-scryfall.mjs
  *
- * Fetches every planechase plane from the Scryfall API, compares oracle
+ * Fetches every planechase plane from the MTGJSON API, compares oracle
  * text + world against src/data/planes.js, and rewrites the file in-place
  * with any corrections.
  *
  * Run locally OR via the sync-plane-texts GitHub Actions workflow.
- * Requires Node 18+ and network access to api.scryfall.com.
+ * Requires Node 18+ and network access to mtgjson.com.
  */
 
 import { readFile, writeFile } from 'fs/promises';
@@ -19,14 +19,11 @@ import https from 'https';
 const __dirname   = path.dirname(fileURLToPath(import.meta.url));
 const PLANES_PATH = path.resolve(__dirname, '..', 'src', 'data', 'planes.js');
 
-// Scryfall set codes for planechase oversized card sets
-const SCRYFALL_SETS = [
-  'ohop',   // Planechase 2009 Planes
-  'opc2',   // Planechase 2012 Planes
-  'opca',   // Planechase Anthology Planes
-];
-// MOC and WHO planechase planes live in layout:planar cards within the
-// regular commander set itself.  We query those separately below.
+// MTGJSON set codes for planechase-only sets (every card is a plane/phenomenon)
+const PLANE_ONLY_SETS = ['OHOP', 'OPC2', 'OPCA'];
+
+// Sets that contain planes mixed with regular cards — filter by layout
+const MIXED_SETS = ['MOC', 'WHO'];
 
 // ---------------------------------------------------------------------------
 // HTTP helper
@@ -34,8 +31,12 @@ const SCRYFALL_SETS = [
 function httpsGet(url) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, {
-      headers: { 'User-Agent': 'planechase-oracle-fixer/1.0' },
+      headers: { 'User-Agent': 'planechase-oracle-fixer/1.0 (+github.com/phantomdenied/Planechase)' },
     }, (res) => {
+      // Follow redirects
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        return httpsGet(res.headers.location).then(resolve, reject);
+      }
       let body = '';
       res.on('data', c => (body += c));
       res.on('end', () => {
@@ -48,29 +49,23 @@ function httpsGet(url) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(20000, () => { req.destroy(); reject(new Error(`Timeout: ${url}`)); });
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error(`Timeout: ${url}`)); });
   });
 }
 
-async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function fetchBySet(setCode) {
-  const cards = [];
-  let url = `https://api.scryfall.com/cards/search?q=set%3A${setCode}+layout%3Aplanar&order=name&unique=prints`;
-  while (url) {
-    const data = await httpsGet(url);
-    cards.push(...data.data);
-    url = data.has_more ? data.next_page : null;
-    if (url) await sleep(110); // respect Scryfall's 10 req/s limit
-  }
-  return cards;
+async function fetchMtgjsonSet(setCode) {
+  const url = `https://mtgjson.com/api/v5/${setCode}.json`;
+  console.log(`  Fetching ${url} …`);
+  const data = await httpsGet(url);
+  // MTGJSON structure: { data: { cards: [...], ... }, meta: {...} }
+  return data.data.cards;
 }
 
 // ---------------------------------------------------------------------------
 // Oracle-text parsing
 // ---------------------------------------------------------------------------
 
-/** Split "static\nWhenever chaos ensues, chaos" → { static, chaos }  */
+/** Split "static\nWhenever chaos ensues, chaos" → { static, chaos } */
 function parseOracleText(text) {
   if (!text) return { static: null, chaos: null };
   const sep = '\nWhenever chaos ensues, ';
@@ -94,12 +89,6 @@ function parseWorld(typeLine) {
 // In-place file patching
 // ---------------------------------------------------------------------------
 
-/**
- * Build a JS string literal for `value` using the most readable quote style:
- *   - null  → "null" (unquoted, for chaos on phenomena)
- *   - apostrophes but no double-quotes → double-quoted string
- *   - otherwise → single-quoted string with escaped apostrophes
- */
 function jsString(value) {
   if (value === null) return 'null';
   if (value.includes("'") && !value.includes('"')) {
@@ -108,28 +97,7 @@ function jsString(value) {
   return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 }
 
-/**
- * Regex that matches a quoted JS string value for a given field name.
- * Handles both single- and double-quoted strings with escape sequences.
- * The field name must appear at the start of a line (after whitespace).
- */
-function fieldRegex(fieldName) {
-  // Matches:  static: 'text'  or  static: "text"  (with escapes inside)
-  return new RegExp(
-    `(?<=(^|\\n)[\\t ]*${fieldName}:\\s{0,10})` +   // lookbehind: "  static:  "
-    `(['"])(?:(?!\\2).|\\\\[\\s\\S])*?\\2`,           // the quoted string
-    'g',
-  );
-}
-
-/**
- * Apply corrections to `fileText`.
- * `entryRanges` is an array of {id, start, end} giving each plane entry's
- * character span in the file.
- * `corrections` is Map<id, {world, static, chaos}>.
- */
 function applyCorrections(fileText, entryRanges, corrections) {
-  // Work from back to front so character offsets stay valid.
   const sorted = [...entryRanges].sort((a, b) => b.start - a.start);
   let result = fileText;
 
@@ -164,20 +132,13 @@ function applyCorrections(fileText, entryRanges, corrections) {
   return result;
 }
 
-/**
- * Find the character ranges of each plane entry in the file.
- * Returns [{id, start, end}] where the span covers from "{ id: 'X'" to the
- * closing "}," of that entry.
- */
 function findEntryRanges(fileText) {
   const ranges = [];
-  // Match "{ id: 'some-id'," or '{ id: "some-id",'
   const idRe = /\{[\t ]*id:\s*(['"])([^'"]+)\1,/g;
   let m;
   while ((m = idRe.exec(fileText)) !== null) {
     const id    = m[2];
     const start = m.index;
-    // Find the closing "}," for this entry
     let depth = 0;
     let i = start;
     let end = -1;
@@ -186,7 +147,6 @@ function findEntryRanges(fileText) {
       if (fileText[i] === '}') {
         depth--;
         if (depth === 0) {
-          // skip optional comma + whitespace after '}'
           end = i + 1;
           if (fileText[end] === ',') end++;
           break;
@@ -203,101 +163,81 @@ function findEntryRanges(fileText) {
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
-  // --- Load PLANES from the JS module ---
+  // --- Load PLANES ---
   console.log('Loading planes.js …');
   const planesUrl = pathToFileURL(PLANES_PATH).href + '?t=' + Date.now();
   const { PLANES } = await import(planesUrl);
   const planeEntries = PLANES.filter(p => p.type === 'plane');
   console.log(`  ${planeEntries.length} plane entries.\n`);
 
-  // Index local planes by name (primary) and id (fallback)
-  const localByName = new Map(planeEntries.map(p => [p.name, p]));
+  // --- Fetch from MTGJSON ---
+  console.log('Fetching from MTGJSON …');
+  const byName = new Map(); // card name → { text, type }
 
-  // --- Fetch from Scryfall ---
-  console.log('Fetching from Scryfall …');
-  const sfByName = new Map(); // card name → scryfall card
-
-  for (const setCode of SCRYFALL_SETS) {
+  for (const setCode of PLANE_ONLY_SETS) {
     try {
-      const cards = await fetchBySet(setCode);
+      const cards = await fetchMtgjsonSet(setCode);
+      let added = 0;
       for (const c of cards) {
-        if (!sfByName.has(c.name)) sfByName.set(c.name, c);
+        if (!byName.has(c.name)) { byName.set(c.name, c); added++; }
       }
-      console.log(`  ${setCode}: ${cards.length} cards`);
+      console.log(`    ${setCode}: ${cards.length} cards (${added} new)`);
     } catch (e) {
       console.error(`  WARN: ${setCode} failed: ${e.message}`);
     }
   }
 
-  // MOC planes: layout:planar in the 'moc' (March of the Machine Commander) set
-  try {
-    const mocUrl = `https://api.scryfall.com/cards/search?q=set%3Amoc+layout%3Aplanar&order=name`;
-    const mocData = await httpsGet(mocUrl);
-    for (const c of mocData.data) {
-      if (!sfByName.has(c.name)) sfByName.set(c.name, c);
+  for (const setCode of MIXED_SETS) {
+    try {
+      const cards = await fetchMtgjsonSet(setCode);
+      const planes = cards.filter(c => c.layout === 'planar');
+      let added = 0;
+      for (const c of planes) {
+        if (!byName.has(c.name)) { byName.set(c.name, c); added++; }
+      }
+      console.log(`    ${setCode}: ${planes.length} planes from ${cards.length} cards (${added} new)`);
+    } catch (e) {
+      console.error(`  WARN: ${setCode} failed: ${e.message}`);
     }
-    console.log(`  MOC: ${mocData.data.length} cards`);
-  } catch (e) {
-    console.error(`  WARN: MOC fetch failed: ${e.message}`);
   }
 
-  // WHO planes: layout:planar in the 'who' set
-  try {
-    const whoUrl = `https://api.scryfall.com/cards/search?q=set%3Awho+layout%3Aplanar&order=name`;
-    const whoData = await httpsGet(whoUrl);
-    for (const c of whoData.data) {
-      if (!sfByName.has(c.name)) sfByName.set(c.name, c);
-    }
-    console.log(`  WHO: ${whoData.data.length} cards`);
-  } catch (e) {
-    console.error(`  WARN: WHO fetch failed: ${e.message}`);
-  }
+  console.log(`\n  Total unique plane names: ${byName.size}\n`);
 
-  console.log(`  Total unique names: ${sfByName.size}\n`);
-
-  if (sfByName.size === 0) {
-    console.error('ERROR: No cards fetched from Scryfall — all requests failed. Check connectivity.');
+  if (byName.size === 0) {
+    console.error('ERROR: No cards fetched — all requests failed. Check connectivity.');
     process.exit(1);
   }
 
   // --- Build correction map ---
-  const corrections  = new Map(); // planeId → {world?, static?, chaos?}
-  const mismatches   = [];
+  const corrections = new Map();
+  const mismatches  = [];
 
   for (const plane of planeEntries) {
-    const sf = sfByName.get(plane.name);
-    if (!sf) continue;
+    const card = byName.get(plane.name);
+    if (!card) continue;
 
-    const sfParsed = parseOracleText(sf.oracle_text);
-    const sfWorld  = parseWorld(sf.type_line);
-    const corr     = {};
+    // MTGJSON uses `text` for oracle text and `type` for type line
+    const parsed = parseOracleText(card.text);
+    const world  = parseWorld(card.type);
+    const corr   = {};
 
-    if (sfWorld && sfWorld !== plane.world) {
-      corr.world = sfWorld;
-    }
-    if (sfParsed.static && sfParsed.static !== plane.static) {
-      corr.static = sfParsed.static;
-    }
-    // For chaos, null means no chaos on Scryfall (phenomena) — only update
-    // when Scryfall has a value that differs.
-    if (sfParsed.chaos !== null && sfParsed.chaos !== plane.chaos) {
-      corr.chaos = sfParsed.chaos;
-    }
+    if (world && world !== plane.world) corr.world = world;
+    if (parsed.static && parsed.static !== plane.static) corr.static = parsed.static;
+    if (parsed.chaos !== null && parsed.chaos !== plane.chaos) corr.chaos = parsed.chaos;
 
     if (Object.keys(corr).length > 0) {
       corrections.set(plane.id, corr);
-      mismatches.push({ plane, sfParsed, sfWorld, corr });
+      mismatches.push({ plane, parsed, world, corr });
     }
   }
 
   if (mismatches.length === 0) {
-    console.log('✓  All plane texts match Scryfall — no changes needed.');
+    console.log('✓  All plane texts match MTGJSON — no changes needed.');
     return;
   }
 
-  // --- Log what will change ---
   console.log(`Found ${mismatches.length} plane(s) to correct:\n`);
-  for (const { plane, sfParsed, sfWorld, corr } of mismatches) {
+  for (const { plane, parsed, world, corr } of mismatches) {
     console.log(`  ${plane.name} [${plane.id}]`);
     if (corr.world  !== undefined) console.log(`    world : "${plane.world}" → "${corr.world}"`);
     if (corr.static !== undefined) console.log(`    static: "${plane.static?.slice(0, 60)}…" → "${corr.static?.slice(0, 60)}…"`);
@@ -305,10 +245,9 @@ async function main() {
   }
   console.log();
 
-  // --- Patch planes.js ---
-  const fileText   = await readFile(PLANES_PATH, 'utf-8');
-  const ranges     = findEntryRanges(fileText);
-  const corrected  = applyCorrections(fileText, ranges, corrections);
+  const fileText  = await readFile(PLANES_PATH, 'utf-8');
+  const ranges    = findEntryRanges(fileText);
+  const corrected = applyCorrections(fileText, ranges, corrections);
 
   if (corrected === fileText) {
     console.warn('WARNING: patch produced no changes — check regex assumptions.');

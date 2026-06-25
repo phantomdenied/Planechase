@@ -1,4 +1,4 @@
-name: Sync Plane Oracle Texts from Scryfall
+name: Sync Plane Oracle Texts from MTGJSON
 
 on:
   workflow_dispatch:
@@ -27,16 +27,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Test Scryfall connectivity
+      - name: Test MTGJSON connectivity
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://api.scryfall.com/cards/named?exact=Island")
-          echo "Scryfall HTTP status: $STATUS"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://mtgjson.com/api/v5/OHOP.json")
+          echo "MTGJSON HTTP status: $STATUS"
           if [ "$STATUS" != "200" ]; then
-            echo "ERROR: Cannot reach Scryfall API (status $STATUS)"
+            echo "ERROR: Cannot reach MTGJSON API (status $STATUS)"
             exit 1
           fi
 
-      - name: Run Scryfall fix script
+      - name: Run MTGJSON fix script
         run: node scripts/fix-planes-from-scryfall.mjs
 
       - name: Show diff
