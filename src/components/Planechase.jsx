@@ -40,12 +40,15 @@ function usePlaneImage(planeName, scryfallSet) {
     setLoading(true)
     setUrl(null)
     let cancelled = false
-    fetch('https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(planeName))
+    const q = encodeURIComponent(`!"${planeName}" type:plane`)
+    fetch(`https://api.scryfall.com/cards/search?q=${q}&unique=prints&order=released`)
       .then(r => {
         if (r.ok) return r.json()
         throw new Error('not found')
       })
-      .then(card => {
+      .then(resp => {
+        const card = resp.data?.[0]
+        if (!card) throw new Error('not found')
         const img =
           card.image_uris?.large ??
           card.image_uris?.normal ??
