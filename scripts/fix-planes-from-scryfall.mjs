@@ -20,7 +20,7 @@ const __dirname   = path.dirname(fileURLToPath(import.meta.url));
 const PLANES_PATH = path.resolve(__dirname, '..', 'src', 'data', 'planes.js');
 
 // MTGJSON set codes for planechase-only sets (every card is a plane/phenomenon)
-const PLANE_ONLY_SETS = ['OHOP', 'OPC2', 'OPCA'];
+const PLANE_ONLY_SETS = ['OHOP', 'OPC2', 'OPCA', 'PUNK'];
 
 // Sets that contain planes mixed with regular cards — filter by layout
 const MIXED_SETS = ['MOC', 'WHO'];
@@ -127,6 +127,12 @@ function applyCorrections(fileText, entryRanges, corrections) {
 
     let block = result.slice(start, end);
 
+    if (corr.type !== undefined) {
+      block = block.replace(
+        /(\btype:\s{0,10})(['"])(?:\\[\s\S]|(?!\2).)*\2/g,
+        (_, key) => key + jsString(corr.type),
+      );
+    }
     if (corr.world !== undefined) {
       // world: sits mid-line (same line as id/name/set), so can't use a line-start lookbehind
       block = block.replace(
@@ -188,8 +194,8 @@ async function main() {
   console.log('Loading planes.js …');
   const planesUrl = pathToFileURL(PLANES_PATH).href + '?t=' + Date.now();
   const { PLANES } = await import(planesUrl);
-  const planeEntries = PLANES.filter(p => p.type === 'plane');
-  console.log(`  ${planeEntries.length} plane entries.\n`);
+  const planeEntries = PLANES.filter(p => p.type === 'plane' || p.type === 'phenomenon');
+  console.log(`  ${planeEntries.length} plane/phenomenon entries.\n`);
 
   // --- Fetch from MTGJSON ---
   console.log('Fetching from MTGJSON …');
@@ -238,13 +244,21 @@ async function main() {
     if (!card) continue;
 
     // MTGJSON uses `text` for oracle text and `type` for type line
-    const parsed = parseOracleText(card.text);
-    const world  = parseWorld(card.type);
-    const corr   = {};
+    const parsed     = parseOracleText(card.text);
+    const world      = parseWorld(card.type);
+    const cardIsPhen = /^Phenomenon\b/i.test(card.type);
+    const corr       = {};
 
-    if (world && world !== plane.world) corr.world = world;
+    // Type mismatch (plane ↔ phenomenon)
+    if (cardIsPhen && plane.type === 'plane')        corr.type = 'phenomenon';
+    if (!cardIsPhen && plane.type === 'phenomenon')  corr.type = 'plane';
+
+    if (!cardIsPhen && world && world !== plane.world) corr.world = world;
+    if (cardIsPhen && plane.world !== null)            corr.world = null;
+
     if (parsed.static && parsed.static !== plane.static) corr.static = parsed.static;
     if (parsed.chaos !== null && parsed.chaos !== plane.chaos) corr.chaos = parsed.chaos;
+    if (cardIsPhen && plane.chaos !== null) corr.chaos = null;
 
     if (Object.keys(corr).length > 0) {
       corrections.set(plane.id, corr);
@@ -260,6 +274,7 @@ async function main() {
   console.log(`Found ${mismatches.length} plane(s) to correct:\n`);
   for (const { plane, parsed, world, corr } of mismatches) {
     console.log(`  ${plane.name} [${plane.id}]`);
+    if (corr.type   !== undefined) console.log(`    type  : "${plane.type}" → "${corr.type}"`);
     if (corr.world  !== undefined) console.log(`    world : "${plane.world}" → "${corr.world}"`);
     if (corr.static !== undefined) console.log(`    static: "${plane.static?.slice(0, 60)}…" → "${corr.static?.slice(0, 60)}…"`);
     if (corr.chaos  !== undefined) console.log(`    chaos : "${plane.chaos?.slice(0, 60)}…"  → "${corr.chaos?.slice(0, 60)}…"`);
