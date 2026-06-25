@@ -2,9 +2,24 @@ import { useState, useEffect } from 'react'
 import { PLANES_ONLY, PHENOMENA, SET_LABELS } from '../data/planes.js'
 import { DevPasswordModal, DevCardEditor, loadDevOverrides, STORAGE_KEY } from './DevEditor'
 import repoOverrides from '../data/plane-overrides.json'
-import chaosIcon from '../assets/chaos-icon-white.png'
-import planewalkIcon from '../assets/planeswalk-icon-white.png'
 import './Planechase.css'
+
+function ChaosIcon() {
+  return (
+    <svg className="die-icon" viewBox="0 0 48 30" fill="none" aria-hidden="true">
+      <circle cx="14" cy="15" r="12" stroke="currentColor" strokeWidth="3.5"/>
+      <circle cx="34" cy="15" r="12" stroke="currentColor" strokeWidth="3.5"/>
+    </svg>
+  )
+}
+
+function PlaneswalkIcon() {
+  return (
+    <svg className="die-icon" viewBox="0 0 48 44" fill="currentColor" aria-hidden="true">
+      <path d="M4 40 L4 20 L14 30 L24 6 L34 30 L44 20 L44 40 Z"/>
+    </svg>
+  )
+}
 
 const ALL_CARDS = [...PLANES_ONLY, ...PHENOMENA]
 const DIE_FACES = ['blank', 'blank', 'blank', 'planeswalk', 'chaos', 'blank']
@@ -78,6 +93,7 @@ export default function Planechase() {
   const [deckIndex, setDeckIndex] = useState(0)
   const [history, setHistory] = useState([])
   const [dieResult, setDieResult] = useState(null)
+  const [dieRollCount, setDieRollCount] = useState(0)
   const [rolling, setRolling] = useState(false)
   const [chaosTriggers, setChaosTriggers] = useState(0)
   const [counters, setCounters] = useState({})
@@ -113,6 +129,7 @@ export default function Planechase() {
     setDieResult(null)
     setTimeout(() => {
       const face = DIE_FACES[Math.floor(Math.random() * DIE_FACES.length)]
+      setDieRollCount(n => n + 1)
       setDieResult(face)
       if (face === 'planeswalk') planeswalk()
       else if (face === 'chaos') setChaosTriggers(n => n + 1)
@@ -270,72 +287,74 @@ export default function Planechase() {
         </div>
       )}
 
-      {dieResult && (
-        <div className={'die-result die-' + dieResult}>
-          {dieResult === 'planeswalk' && (
-            <><img className="die-icon" src={planewalkIcon} alt="" /><span>Planeswalk!</span></>
-          )}
-          {dieResult === 'chaos' && (
-            <><img className="die-icon" src={chaosIcon} alt="" /><span>Chaos!</span></>
-          )}
-          {dieResult === 'blank' && <span>No effect</span>}
+      <div className="controls-panel">
+        {dieResult && (
+          <div key={dieRollCount} className={'die-result die-' + dieResult}>
+            {dieResult === 'planeswalk' && (
+              <><PlaneswalkIcon /><span>Planeswalk!</span></>
+            )}
+            {dieResult === 'chaos' && (
+              <><ChaosIcon /><span>Chaos!</span></>
+            )}
+            {dieResult === 'blank' && <span>No effect</span>}
+          </div>
+        )}
+
+        <div className="plane-controls">
+          <button className="plane-btn secondary" onClick={planewalkBack} disabled={history.length === 0}>Back</button>
+          <button
+            className={'plane-btn die-btn-big' + (rolling ? ' rolling' : '')}
+            onClick={rollDie}
+            disabled={rolling}
+          >
+            {rolling ? '...' : 'Roll Planar Die'}
+          </button>
+          <button className="plane-btn primary" onClick={() => planeswalk()}>Planeswalk</button>
         </div>
-      )}
 
-      <div className="plane-controls">
-        <button className="plane-btn secondary" onClick={planewalkBack} disabled={history.length === 0}>Back</button>
-        <button
-          className={'plane-btn die-btn-big' + (rolling ? ' rolling' : '')}
-          onClick={rollDie}
-          disabled={rolling}
-        >
-          {rolling ? '...' : 'Roll Planar Die'}
-        </button>
-        <button className="plane-btn primary" onClick={() => planeswalk()}>Planeswalk</button>
-      </div>
+        <div className="plane-controls secondary-row">
+          <button className="plane-btn small" onClick={() => setShowDeckConfig(v => !v)}>
+            Deck ({deck.length})
+          </button>
+          <span className="plane-progress">Plane {deckIndex + 1} / {deck.length}</span>
+          <button className="plane-btn small danger" onClick={() => buildDeck()}>Reshuffle</button>
+        </div>
 
-      <div className="plane-controls secondary-row">
-        <button className="plane-btn small" onClick={() => setShowDeckConfig(v => !v)}>
-          Deck ({deck.length})
-        </button>
-        <span className="plane-progress">Plane {deckIndex + 1} / {deck.length}</span>
-        <button className="plane-btn small danger" onClick={() => buildDeck()}>Reshuffle</button>
-      </div>
+        {showDeckConfig && (
+          <div className="deck-config">
+            <div className="deck-config-section">
+              <span className="config-label">Set Filter</span>
+              <div className="filter-buttons">
+                {SET_KEYS.map(k => (
+                  <button
+                    key={k}
+                    className={'filter-btn' + (filterSets.has(k) ? ' active' : '')}
+                    onClick={() => toggleSet(k)}
+                  >
+                    {SET_LABELS[k]} ({setCounts[k] ?? 0})
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="config-toggle">
+              <input type="checkbox" checked={includePhenomena} onChange={e => setIncludePhenomena(e.target.checked)} />
+              Include Phenomena
+            </label>
+            <button className="plane-btn primary" onClick={applyConfig}>Apply and Reshuffle</button>
+          </div>
+        )}
 
-      {showDeckConfig && (
-        <div className="deck-config">
-          <div className="deck-config-section">
-            <span className="config-label">Set Filter</span>
-            <div className="filter-buttons">
-              {SET_KEYS.map(k => (
-                <button
-                  key={k}
-                  className={'filter-btn' + (filterSets.has(k) ? ' active' : '')}
-                  onClick={() => toggleSet(k)}
-                >
-                  {SET_LABELS[k]} ({setCounts[k] ?? 0})
-                </button>
+        {history.length > 0 && (
+          <div className="plane-history">
+            <span className="history-label">Previously visited</span>
+            <div className="history-chips">
+              {history.slice(0, 6).map((p, i) => (
+                <span key={i} className={'history-chip' + (p.type === 'phenomenon' ? ' phen' : '')}>{p.name}</span>
               ))}
             </div>
           </div>
-          <label className="config-toggle">
-            <input type="checkbox" checked={includePhenomena} onChange={e => setIncludePhenomena(e.target.checked)} />
-            Include Phenomena
-          </label>
-          <button className="plane-btn primary" onClick={applyConfig}>Apply and Reshuffle</button>
-        </div>
-      )}
-
-      {history.length > 0 && (
-        <div className="plane-history">
-          <span className="history-label">Previously visited</span>
-          <div className="history-chips">
-            {history.slice(0, 6).map((p, i) => (
-              <span key={i} className={'history-chip' + (p.type === 'phenomenon' ? ' phen' : '')}>{p.name}</span>
-            ))}
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <button
         className={'dev-mode-fab' + (devAuth ? ' unlocked' : '')}

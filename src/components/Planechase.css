@@ -395,3 +395,113 @@
 }
 
 .history-chip.phen { border-color: rgba(224,154,58,0.3); color: var(--warning); }
+
+/* ── Landscape phone / tablet ─────────────────────────────────────────────── */
+@media (orientation: landscape) and (max-height: 560px) {
+  .planechase {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100%;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  /* Card fills the left portion */
+  .plane-card {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    border-radius: 0;
+    border-top: none;
+    border-bottom: none;
+    border-left: none;
+    position: relative;
+  }
+
+  /* Image fills the full card height */
+  .plane-img-wrap {
+    height: 100%;
+    max-height: none;
+    aspect-ratio: auto;
+  }
+
+  /* Slightly widen coverage for more-square landscape containers */
+  .plane-img {
+    width: 78%;
+    height: 148%;
+  }
+
+  /* Text block overlays the bottom of the card instead of pushing below */
+  .plane-text-block {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    max-height: 55%;
+    overflow-y: auto;
+    background: rgba(10, 12, 20, 0.92);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+  }
+
+  /* Counters overlay bottom-right corner */
+  .plane-counters {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 3;
+    background: rgba(10, 12, 20, 0.85);
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    border-radius: 8px 0 0 0;
+    padding: 8px 12px;
+  }
+
+  /* Controls sidebar on the right */
+  .controls-panel {
+    flex: 0 0 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    border-left: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  /* Compact die result */
+  .die-result {
+    padding: 10px 10px;
+    font-size: 14px;
+    gap: 7px;
+    border-radius: 8px;
+  }
+  .die-icon { width: 28px; height: 28px; }
+
+  /* Buttons stacked vertically */
+  .plane-controls {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .plane-btn { height: 44px; font-size: 13px; }
+  .plane-btn.secondary { flex: none; }
+  .plane-btn.primary { flex: none; }
+  .die-btn-big { flex: none; }
+
+  .secondary-row { flex-direction: column; gap: 5px; }
+  .plane-btn.small { height: 36px; }
+  .plane-progress { text-align: left; flex: none; font-size: 11px; }
+
+  /* Deck config and history become scrollable inside the sidebar */
+  .deck-config { padding: 10px; gap: 8px; }
+  .filter-buttons { gap: 4px; }
+  .filter-btn { font-size: 11px; padding: 4px 7px; min-height: 32px; }
+
+  .plane-history { gap: 4px; }
+  .history-chips { gap: 4px; }
+  .history-chip { font-size: 10px; padding: 3px 6px; }
+}
