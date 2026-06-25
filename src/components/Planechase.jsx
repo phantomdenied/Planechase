@@ -176,6 +176,11 @@ export default function Planechase() {
     })
   }
 
+  function clearAllDevOverrides() {
+    setDevOverrides({})
+    localStorage.setItem(STORAGE_KEY, '{}')
+  }
+
   function toggleSet(key) {
     setFilterSets(prev => {
       const next = new Set(prev)
@@ -346,6 +351,7 @@ export default function Planechase() {
           allOverrides={devOverrides}
           onSave={saveDevOverride}
           onClear={clearDevOverride}
+          onClearAll={clearAllDevOverrides}
           onClose={() => setShowDevEditor(false)}
         />
       )}

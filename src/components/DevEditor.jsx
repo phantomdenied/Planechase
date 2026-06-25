@@ -93,7 +93,7 @@ export function DevPasswordModal({ onAuth, onClose }) {
   )
 }
 
-export function DevCardEditor({ plane, override, allOverrides, onSave, onClear, onClose }) {
+export function DevCardEditor({ plane, override, allOverrides, onSave, onClear, onClearAll, onClose }) {
   const merged = { ...plane, ...(override ?? {}) }
   const [type, setType] = useState(merged.type ?? 'plane')
   const [world, setWorld] = useState(merged.world ?? '')
@@ -136,6 +136,7 @@ export function DevCardEditor({ plane, override, allOverrides, onSave, onClear, 
     try {
       await commitToGitHub(token, combinedOverrides())
       setPushStatus('success')
+      onClearAll()
     } catch (e) {
       setPushStatus(e)
     }
