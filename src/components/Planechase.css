@@ -396,112 +396,150 @@
 
 .history-chip.phen { border-color: rgba(224,154,58,0.3); color: var(--warning); }
 
-/* ── Landscape phone / tablet ─────────────────────────────────────────────── */
+/* ── Landscape phone (full-screen card + overlay controls) ─────────────────── */
 @media (orientation: landscape) and (max-height: 560px) {
+
+  /* Container fills the viewport */
   .planechase {
-    flex-direction: row;
-    align-items: stretch;
-    height: 100%;
-    gap: 0;
-    overflow: hidden;
-  }
-
-  /* Card fills the left portion */
-  .plane-card {
-    flex: 1 1 auto;
-    min-width: 0;
-    height: 100%;
-    border-radius: 0;
-    border-top: none;
-    border-bottom: none;
-    border-left: none;
     position: relative;
+    height: 100%;
+    overflow: hidden;
+    gap: 0;
   }
 
-  /* Image fills the full card height */
+  /* Card is the full-screen backdrop */
+  .plane-card {
+    position: absolute;
+    inset: 0;
+    border: none;
+    border-radius: 0;
+    background: #000;
+    z-index: 0;
+    display: block; /* override column flex */
+  }
+
+  /* Image fills the screen */
   .plane-img-wrap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
     height: 100%;
     max-height: none;
     aspect-ratio: auto;
   }
 
-  /* Slightly widen coverage for more-square landscape containers */
+  /*
+   * Rotation math for full-screen landscape container (c = W/H).
+   * After rotate(90deg): visual_w = height_css, visual_h = width_css.
+   * To cover: height_css ≥ W  →  B ≥ 100·c
+   *           width_css  ≥ H  →  A ≥ 100/c
+   * Phones range c ≈ 1.78 (SE) – 2.17 (modern), so A=60%, B=225% covers all.
+   */
   .plane-img {
-    width: 78%;
-    height: 148%;
+    width: 60%;
+    height: 225%;
   }
 
-  /* Text block overlays the bottom of the card instead of pushing below */
+  /* Show-text button moves to top-right so controls don't cover it */
+  .plane-img-overlay {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 10px;
+  }
+
+  /* Text block slides up from bottom, above the controls bar */
   .plane-text-block {
     position: absolute;
-    bottom: 0;
+    bottom: 110px;
     left: 0;
     right: 0;
-    z-index: 2;
-    max-height: 55%;
+    z-index: 4;
+    max-height: 50%;
     overflow-y: auto;
-    background: rgba(10, 12, 20, 0.92);
-    backdrop-filter: blur(6px);
+    background: rgba(8, 10, 18, 0.93);
+    backdrop-filter: blur(8px);
     border-top: 1px solid var(--border);
     border-radius: 0;
   }
 
-  /* Counters overlay bottom-right corner */
+  /* Counter widget sits top-left */
   .plane-counters {
     position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 4;
+    background: rgba(8, 10, 18, 0.82);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+  }
+
+  /* ── Controls: gradient overlay at bottom of screen ── */
+  .controls-panel {
+    position: absolute;
     bottom: 0;
+    left: 0;
     right: 0;
     z-index: 3;
-    background: rgba(10, 12, 20, 0.85);
-    border-top: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-    border-radius: 8px 0 0 0;
-    padding: 8px 12px;
-  }
-
-  /* Controls sidebar on the right */
-  .controls-panel {
-    flex: 0 0 160px;
+    padding: 28px 14px 12px;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 65%, transparent 100%);
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    border-left: 1px solid var(--border);
-    background: var(--surface);
+    gap: 7px;
   }
 
-  /* Compact die result */
+  /* Compact die result floats centred above buttons */
   .die-result {
-    padding: 10px 10px;
-    font-size: 14px;
+    align-self: center;
+    padding: 5px 14px;
+    font-size: 13px;
     gap: 7px;
     border-radius: 8px;
   }
-  .die-icon { width: 28px; height: 28px; }
+  .die-icon { width: 24px; height: 24px; }
 
-  /* Buttons stacked vertically */
-  .plane-controls {
-    flex-direction: column;
-    gap: 6px;
+  /* Main action row: Back | Roll Die | Planeswalk */
+  .plane-controls { gap: 8px; }
+
+  .plane-btn { height: 44px; font-size: 14px; }
+
+  /* Ghost-style for Back so image shows through */
+  .plane-btn.secondary {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.22);
+    color: rgba(255,255,255,0.9);
+    flex: 0 0 auto;
+  }
+  .plane-btn.secondary:hover:not(:disabled) { background: rgba(255,255,255,0.2); }
+  .plane-btn.secondary:disabled { opacity: 0.3; }
+
+  /* Secondary row: Deck | progress | Reshuffle */
+  .secondary-row { gap: 8px; }
+  .plane-btn.small {
+    height: 34px;
+    font-size: 12px;
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.65);
+  }
+  .plane-btn.small.danger { color: var(--danger); border-color: rgba(224,82,82,0.3); }
+  .plane-progress { color: rgba(255,255,255,0.5); font-size: 11px; }
+
+  /* Deck config popup */
+  .deck-config {
+    background: rgba(8,10,18,0.96);
+    border-color: rgba(255,255,255,0.15);
+    max-height: 38vh;
+    overflow-y: auto;
   }
 
-  .plane-btn { height: 44px; font-size: 13px; }
-  .plane-btn.secondary { flex: none; }
-  .plane-btn.primary { flex: none; }
-  .die-btn-big { flex: none; }
-
-  .secondary-row { flex-direction: column; gap: 5px; }
-  .plane-btn.small { height: 36px; }
-  .plane-progress { text-align: left; flex: none; font-size: 11px; }
-
-  /* Deck config and history become scrollable inside the sidebar */
-  .deck-config { padding: 10px; gap: 8px; }
-  .filter-buttons { gap: 4px; }
-  .filter-btn { font-size: 11px; padding: 4px 7px; min-height: 32px; }
-
-  .plane-history { gap: 4px; }
-  .history-chips { gap: 4px; }
-  .history-chip { font-size: 10px; padding: 3px 6px; }
+  /* History */
+  .history-chip {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.6);
+    font-size: 10px;
+    padding: 3px 7px;
+  }
 }
